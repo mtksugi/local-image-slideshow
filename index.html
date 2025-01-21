@@ -2,12 +2,14 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ローカル画像スライドショー</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
         }
         .slideshow-container {
             width: 100%;
@@ -24,6 +26,7 @@
             opacity: 0;
             transition: opacity 1s ease-in-out;
             position: absolute;
+            object-fit: contain;
         }
 
         .slide.active {
@@ -32,15 +35,109 @@
 
         #controls {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease;
             opacity: 0.7;
+            width: auto;
+            max-width: 90%;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         #controls:hover {
             opacity: 1;
+        }
+
+        #controls button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            min-width: 80px;
+            touch-action: manipulation;
+        }
+
+        #controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #interval-select {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 7px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            min-width: 70px;
+        }
+
+        #interval-select option {
+            background: #333;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                bottom: 20px;
+                padding: 12px 15px;
+                gap: 10px;
+            }
+
+            #controls button {
+                padding: 10px 12px;
+                font-size: 13px;
+                min-width: 70px;
+            }
+
+            #interval-select {
+                padding: 9px 8px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #controls {
+                bottom: 15px;
+                padding: 10px;
+                gap: 8px;
+            }
+
+            #controls button {
+                padding: 8px 10px;
+                font-size: 12px;
+                min-width: 60px;
+            }
+
+            #interval-select {
+                padding: 7px 6px;
+                font-size: 12px;
+            }
+        }
+
+        @media (hover: none) {
+            #controls {
+                opacity: 1;
+            }
+
+            #controls button:active {
+                background: rgba(255, 255, 255, 0.4);
+            }
         }
     </style>
 </head>
@@ -50,8 +147,13 @@
     <div id="controls">
         <input type="file" id="folder" webkitdirectory multiple style="display: none;">
         <button onclick="document.getElementById('folder').click()">フォルダを選択</button>
-        <button onclick="toggleFullScreen()">フルスクリーン</button>
+        <button id="fullscreen-button" onclick="toggleFullScreen()">フルスクリーン</button>
         <button onclick="stopSlideshow()">停止</button>
+        <select id="interval-select">
+            <option value="3000">3秒</option>
+            <option value="5000" selected>5秒</option>
+            <option value="10000">10秒</option>
+        </select>
     </div>
     <script src="slideshow.js"></script>
 </body>

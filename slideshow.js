@@ -30,9 +30,13 @@ function releaseWakeLock() {
 
 document.getElementById('folder').addEventListener('change', function(event) {
     const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
     images = Array.from(files).filter(file => 
         file.type.startsWith('image/')
     );
+    
+    if (images.length === 0) return;
     
     // 配列をシャッフル
     for (let i = images.length - 1; i > 0; i--) {
@@ -47,23 +51,28 @@ document.getElementById('folder').addEventListener('change', function(event) {
     }
 });
 
+// TIMER_INTERVALを削除し、代わりに関数で取得
+function getInterval() {
+    const select = document.getElementById('interval-select');
+    return parseInt(select.value);
+}
+
+// startSlideshow関数を修正
 function startSlideshow() {
     const container = document.getElementById('slideshow');
     container.innerHTML = '';
     imageHistory = []; // 履歴をクリア
+    currentIndex = 0;  // インデックスをリセット
     
-    // 最初の画像を表示
     showImage(currentIndex);
     
-    // 既存のインターバルをクリア
     if (slideshowInterval) {
         clearInterval(slideshowInterval);
     }
     
-    // 新しいタイマーを設定
     slideshowInterval = setInterval(() => {
-        showNextImage(); // showNextImageを使用
-    }, 10000);
+        showNextImage();
+    }, getInterval());
 }
 
 function showImage(index) {
@@ -80,6 +89,9 @@ function showImage(index) {
     const img = document.createElement('img');
     img.classList.add('slide');
     img.src = URL.createObjectURL(images[index]);
+    img.onload = () => {
+        URL.revokeObjectURL(img.src);
+      };
     container.appendChild(img);
     
     setTimeout(() => {
@@ -178,20 +190,24 @@ function stopSlideshow() {
         URL.revokeObjectURL(image);
     });
     images = [];
-    imageHistory = []; // 履歴もクリア
+    imageHistory = []; // 履歴をクリア
+    currentIndex = 0;  // インデックスをリセット
     
     // スライドショーのコンテナをクリア
     const container = document.getElementById('slideshow');
     container.innerHTML = '';
     
+    // input要素をリセット
+    const folderInput = document.getElementById('folder');
+    folderInput.value = '';
+    
     // Wake Lockを解除
     releaseWakeLock();
 }
 
-// 次の画像を表示する関数を追加
+// showNextImage関数を修正
 function showNextImage() {
     if (images.length > 0) {
-        // 現在のインデックスを履歴に追加
         if (!imageHistory.includes(currentIndex)) {
             if (imageHistory.length >= MAX_HISTORY) {
                 imageHistory.shift();
@@ -202,29 +218,36 @@ function showNextImage() {
         currentIndex = (currentIndex + 1) % images.length;
         showImage(currentIndex);
         
-        // インターバルをリセット
         if (slideshowInterval) {
             clearInterval(slideshowInterval);
             slideshowInterval = setInterval(() => {
                 showNextImage();
-            }, 10000);
+            }, getInterval());
         }
     }
 }
 
-// 前の画像を表示する関数を追加
+// showPreviousImage関数を修正
 function showPreviousImage() {
     if (images.length > 0 && imageHistory.length > 0) {
-        // 履歴から前のインデックスを取得
         currentIndex = imageHistory.pop();
         showImage(currentIndex);
         
-        // インターバルをリセット
         if (slideshowInterval) {
             clearInterval(slideshowInterval);
             slideshowInterval = setInterval(() => {
                 showNextImage();
-            }, 10000);
+            }, getInterval());
         }
     }
-} 
+}
+
+// インターバル変更時のイベントリスナーを追加
+document.getElementById('interval-select').addEventListener('change', function() {
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        slideshowInterval = setInterval(() => {
+            showNextImage();
+        }, getInterval());
+    }
+}); 
