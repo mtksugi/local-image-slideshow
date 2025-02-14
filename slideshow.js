@@ -99,35 +99,14 @@ function showImage(index) {
     }, 50);
 }
 
-function toggleFullScreen() {
-    const controls = document.getElementById('controls');
-    
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
-            requestWakeLock();
-            controls.style.display = 'none'; // フルスクリーン時に非表示
-            addMouseMoveHandler(); // マウス移動検知の開始
-        }).catch(err => {
-            console.log(`フルスクリーンモードのエラー: ${err.message}`);
-        });
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-            releaseWakeLock();
-            controls.style.display = 'block'; // 通常表示時に表示
-            removeMouseMoveHandler(); // マウス移動検知の終了
-        }
-    }
-}
+// 画面スリープ防止: Wake Lockの取得／解除用関数等は既存のものを利用
 
-function handleMouseMove() {
+// --- 新しく追加する共通のインタラクション処理 ---
+// マウス・タッチのいずれかの操作でcontrolsを一時表示し、一定時間後に非表示にする処理
+function handleInteraction() {
     const controls = document.getElementById('controls');
     controls.style.display = 'block';
-    
-    // 既存のタイマーをクリア
     clearTimeout(mouseTimer);
-    
-    // 2秒後に非表示
     mouseTimer = setTimeout(() => {
         if (document.fullscreenElement) {
             controls.style.display = 'none';
@@ -135,13 +114,36 @@ function handleMouseMove() {
     }, 2000);
 }
 
-function addMouseMoveHandler() {
-    document.addEventListener('mousemove', handleMouseMove);
+function addInteractionHandler() {
+    document.addEventListener('mousemove', handleInteraction);
+    document.addEventListener('touchstart', handleInteraction);
 }
 
-function removeMouseMoveHandler() {
-    document.removeEventListener('mousemove', handleMouseMove);
-    clearTimeout(mouseTimer);
+function removeInteractionHandler() {
+    document.removeEventListener('mousemove', handleInteraction);
+    document.removeEventListener('touchstart', handleInteraction);
+}
+
+// --- toggleFullScreen関数の修正 ---
+function toggleFullScreen() {
+    const controls = document.getElementById('controls');
+    
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+            requestWakeLock();
+            controls.style.display = 'none'; // フルスクリーン時にコントロール非表示
+            addInteractionHandler(); // マウスとタッチの操作を検知
+        }).catch(err => {
+            console.log(`フルスクリーンモードのエラー: ${err.message}`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+            releaseWakeLock();
+            controls.style.display = 'block'; // 通常時は表示
+            removeInteractionHandler();
+        }
+    }
 }
 
 // フルスクリーン解除時のイベントリスナーを追加
@@ -149,7 +151,7 @@ document.addEventListener('fullscreenchange', () => {
     const controls = document.getElementById('controls');
     if (!document.fullscreenElement) {
         controls.style.display = 'block';
-        removeMouseMoveHandler();
+        removeInteractionHandler();
     }
 });
 

@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ローカル画像スライドショー</title>
+    <!-- マニフェストファイルの読み込み -->
+    <link rel="manifest" href="manifest.json">
+    <!-- iOS用の設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <!-- 早期にモバイル判定をグローバル変数へ -->
+    <script>
+        const ua = navigator.userAgent;
+        window.isMobile = /Android|BlackBerry|iPhone|iPod|Opera Mini|IEMobile/i.test(ua) || ('ontouchstart' in window);
+        console.log('isMobile:', window.isMobile);
+    </script>
     <style>
         body {
             margin: 0;
@@ -165,12 +177,50 @@
     </div>
     <script src="slideshow.js"></script>
     <script>
-        // モバイルデバイスの判定
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        // ボタンのテキストを設定
-        document.getElementById('select-button').textContent = 
-            isMobile ? '画像を選択' : 'フォルダを選択';
+        (function updateUI() {
+            function setUI() {
+                // モバイルの場合はテキストを「画像を選択」に変更
+                document.getElementById('select-button').textContent = window.isMobile ? '画像を選択' : 'フォルダを選択';
+                // モバイルの場合はフルスクリーンボタンを非表示にする
+                if (window.isMobile) {
+                    document.getElementById('fullscreen-button').style.display = 'none';
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setUI);
+            } else {
+                setUI();
+            }
+        })();
+
+        // フルスクリーンのトグル関数
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log("フルスクリーンへの移行に失敗しました: ", err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // スライドショー停止用の例（実際のタイマー停止処理を適宜実装してください）
+        let slideshowInterval;
+        function stopSlideshow() {
+            clearInterval(slideshowInterval);
+            console.log("スライドショーを停止しました");
+        }
+
+        // サービスワーカーの登録
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(function(registration) {
+                    console.log('Service Workerの登録に成功しました。スコープ: ', registration.scope);
+                })
+                .catch(function(error) {
+                    console.error('Service Workerの登録に失敗しました: ', error);
+                });
+        }
     </script>
 </body>
 </html> 
